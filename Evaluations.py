@@ -4,6 +4,7 @@ from scipy.stats import pearsonr
 from sklearn.model_selection import cross_val_score, cross_val_predict
 import statistics
 import numpy as np
+import datetime 
 import os
 
 def evaluate_model_crossvalid(model, x, y):
@@ -53,6 +54,7 @@ def save_plot(name, mode):
     """Saves the plot to a file"""
     save_dir = 'plots'
     os.makedirs(save_dir, exist_ok=True)
-    filename = os.path.join(save_dir, f"{name}_{mode} Plot_.png")
+    now = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+    filename = os.path.join(save_dir, f"{name}_{mode}_{now} Plot_.png")
     plt.savefig(filename, dpi=300, bbox_inches='tight')
     plt.show()
