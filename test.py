@@ -1,5 +1,6 @@
 import Baseline
 import Preprocessing
+import Evaluations
 
 data = Preprocessing.load_data('Kumar.csv')
-Baseline.multi_random_forest(data)
+Baseline.mean(data)

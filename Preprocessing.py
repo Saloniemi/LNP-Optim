@@ -9,10 +9,10 @@ def load_data(file_path):
     return data
 
     
-def split_data(data):
+def split_data_log(data):
     """Splits the data into features and target variable. Returns x and y"""
     x = data[['Ion/Helper Percent', 'N/P Ratio', 'Ion/Helper Ratio', 'Chol/PEG Ratio']]
-    y = np.log1p(data[['Transfection Efficacy']]) 
+    y = np.log1p(data[['Transfection Efficacy']]).values.ravel() 
 
     return x, y
 
