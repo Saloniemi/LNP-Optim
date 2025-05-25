@@ -7,6 +7,8 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import Ridge
 import statistics
+from sklearn.preprocessing import KBinsDiscretizer
+from scipy.stats import norm
 import numpy as np
 
 def random_forest(data, num_estimators=100):
@@ -132,3 +134,75 @@ def polynomial_regression(data, degree=2):
     Evaluations.save_plot('Polynomial Regression', 'Scatter')
 
     return predictions, lr # saves all trained params and hyperparams, except preprocessing pipelines and data
+
+## AI GENERATED (NEED TO BE TESTED + MODIFIED)
+def fit_naive_gaussian_regression(X_train, y_train, n_bins=10):
+    """
+    Fits a naive Gaussian Bayes regression model.
+
+    Parameters:
+        X_train: ndarray, shape (n_samples, n_features)
+        y_train: ndarray, shape (n_samples,)
+        n_bins: int, number of bins to discretize y
+
+    Returns:
+        model: dict with keys:
+            - 'feature_stats': {class: (means, stds)}
+            - 'class_priors': {class: prior probability}
+            - 'bin_means': mean value of each bin (to reconstruct y)
+            - 'est': the fitted KBinsDiscretizer object
+    """
+    est = KBinsDiscretizer(n_bins=n_bins, encode='ordinal', strategy='quantile')
+    y_binned = est.fit_transform(y_train.reshape(-1, 1)).astype(int).ravel()
+
+    feature_stats = {}
+    class_priors = {}
+
+    for c in np.unique(y_binned):
+        X_c = X_train[y_binned == c]
+        means = X_c.mean(axis=0)
+        stds = X_c.std(axis=0) + 1e-6  # Avoid divide by zero
+        feature_stats[c] = (means, stds)
+        class_priors[c] = np.mean(y_binned == c)
+
+    # Mean value of y in each bin (expected y)
+    bin_means = est.bin_edges_[0].mean(axis=1)
+
+    return {
+        'feature_stats': feature_stats,
+        'class_priors': class_priors,
+        'bin_means': bin_means,
+        'est': est
+    }
+
+
+def predict_naive_gaussian_regression(X, model):
+    """
+    Predicts using the fitted naive Gaussian regression model.
+
+    Parameters:
+        X: ndarray, shape (n_samples, n_features)
+        model: dict returned by fit_naive_gaussian_regression
+
+    Returns:
+        y_pred: ndarray, shape (n_samples,)
+    """
+    feature_stats = model['feature_stats']
+    class_priors = model['class_priors']
+    bin_means = model['bin_means']
+    n_bins = len(bin_means)
+
+    y_pred = []
+    for x in X:
+        probs = []
+        for c in range(n_bins):
+            mean, std = feature_stats[c]
+            likelihood = np.prod(norm.pdf(x, mean, std))
+            prior = class_priors[c]
+            probs.append(likelihood * prior)
+        probs = np.array(probs)
+        probs /= probs.sum()  # Normalize to get P(y|x)
+        pred = np.sum(probs * bin_means)
+        y_pred.append(pred)
+
+    return np.array(y_pred)
